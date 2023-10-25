@@ -12,3 +12,17 @@ You can name the container anything you want, or not name it all. `--name` flag 
 
 ---
 :zap: Happy Coding!
+
+it is good to consider using go doc [packageName] in order to get a better understanding of what we want to use in our software.
+For example:
+go doc fmt.Prinln
+or simply:
+go doc fmt
+
+
+This is how we can declare Variables, var variableName varType
+Example:
+  var stationName string
+  var nextTrainTime int8
+  var isUptownTrain bool
+
