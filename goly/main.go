@@ -1,13 +1,11 @@
 package main
 
 import (
-	"goly/model"
-	"goly/server"
+	"goly-app/database"
+	"goly-app/goly/server"
 )
 
-
-
 func main() {
-	model.Setup()
+	database.Setup()
 	server.SetupAndListen()
 }

@@ -1,4 +1,4 @@
-module goly
+module goly-app
 
 go 1.22
 
@@ -6,6 +6,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.28.0
 	gorm.io/driver/sqlite v1.3.1
 	gorm.io/gorm v1.23.2
+	golang.org/x/crypto v0.0.0-20220525153422-2865c363638c
 )
 
 require (

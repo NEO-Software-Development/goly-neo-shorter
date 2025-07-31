@@ -2,8 +2,9 @@ package server
 
 import (
 	"fmt"
-	"goly/model"
-	"goly/utils"
+	"goly-app/auth"
+	"goly-app/goly/model"
+	"goly-app/goly/utils"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -134,13 +135,17 @@ func SetupAndListen() {
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
 
-	router.Get("/r/:redirect", redirect)
+	// Goly routes
+	goly := router.Group("/goly")
+	goly.Get("/:redirect", redirect)
+	goly.Get("/", getAllGolies)
+	goly.Get("/:id", getGoly)
+	goly.Post("/", createGoly)
+	goly.Patch("/", updateGoly)
+	goly.Delete("/:id", deleteGoly)
 
-	router.Get("/goly", getAllGolies)
-	router.Get("/goly/:id", getGoly)
-	router.Post("/goly", createGoly)
-	router.Patch("/goly", updateGoly)
-	router.Delete("/goly/:id", deleteGoly)
+	// Auth routes
+	auth.SetupRoutes(router)
 
 	router.Listen(":3000")
 	
