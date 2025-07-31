@@ -135,9 +135,11 @@ func SetupAndListen() {
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
 
+	// Public routes
+	router.Get("/r/:redirect", redirect)
+
 	// Goly routes
-	goly := router.Group("/goly")
-	goly.Get("/:redirect", redirect)
+	goly := router.Group("/goly", auth.AuthMiddleware)
 	goly.Get("/", getAllGolies)
 	goly.Get("/:id", getGoly)
 	goly.Post("/", createGoly)
@@ -146,6 +148,12 @@ func SetupAndListen() {
 
 	// Auth routes
 	auth.SetupRoutes(router)
+
+	// Admin routes
+	admin := router.Group("/admin", auth.AuthMiddleware, auth.AdminOnly)
+	admin.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Welcome, Admin!")
+	})
 
 	router.Listen(":3000")
 	

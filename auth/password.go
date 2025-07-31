@@ -33,7 +33,7 @@ func HashPassword(password string) (string, error) {
 		keyLength:   32,
 	}
 
-	salt, err := generateRandomBytes(params.saltLength)
+	salt, err := GenerateRandomBytes(params.saltLength)
 	if err != nil {
 		return "", err
 	}
@@ -62,7 +62,7 @@ func ComparePasswordAndHash(password, encodedHash string) (bool, error) {
 	return false, nil
 }
 
-func generateRandomBytes(n uint32) ([]byte, error) {
+func GenerateRandomBytes(n uint32) ([]byte, error) {
 	b := make([]byte, n)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -70,6 +70,14 @@ func generateRandomBytes(n uint32) ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+func GenerateSessionToken() (string, error) {
+	b, err := GenerateRandomBytes(32)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
 }
 
 func decodeHash(encodedHash string) (p *argon2Params, salt, hash []byte, err error) {

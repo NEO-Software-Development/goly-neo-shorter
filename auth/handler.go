@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"time"
 )
 
 type RegisterRequest struct {
@@ -79,9 +80,61 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	// For now, just return a success message.
-	// Session management will be implemented next.
+	token, err := GenerateSessionToken()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to generate session token",
+		})
+	}
+
+	session := &Session{
+		Token:    token,
+		UserID:   user.ID,
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}
+
+	if err := CreateSession(session); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to create session",
+		})
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "session_token",
+		Value:    token,
+		Expires:  session.ExpiresAt,
+		HTTPOnly: true,
+		Secure:   true, // Set to true in production
+	})
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "login successful",
+	})
+}
+
+func Logout(c *fiber.Ctx) error {
+	token := c.Cookies("session_token")
+	if token == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "unauthorized",
+		})
+	}
+
+	if err := DeleteSessionByToken(token); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to logout",
+		})
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		HTTPOnly: true,
+		Secure:   true,
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "logout successful",
 	})
 }
