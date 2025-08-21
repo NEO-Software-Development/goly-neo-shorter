@@ -4,9 +4,9 @@ go 1.22
 
 require (
 	github.com/gofiber/fiber/v2 v2.28.0
+	golang.org/x/crypto v0.22.0
 	gorm.io/driver/sqlite v1.3.1
 	gorm.io/gorm v1.23.2
-	golang.org/x/crypto v0.0.0-20220525153422-2865c363638c
 )
 
 require (
@@ -18,5 +18,5 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.33.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	golang.org/x/sys v0.0.0-20220111092808-5a964db01320 // indirect
+	golang.org/x/sys v0.19.0 // indirect
 )

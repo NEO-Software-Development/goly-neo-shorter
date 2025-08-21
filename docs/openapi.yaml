@@ -1,0 +1,282 @@
+openapi: 3.0.0
+info:
+  title: Goly API
+  description: The API for the Goly URL shortener application.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /r/{redirect}:
+    get:
+      summary: Redirect to original URL
+      description: Redirects a shortened Goly URL to its original destination.
+      parameters:
+        - name: redirect
+          in: path
+          required: true
+          description: The Goly shortened URL code.
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the original URL.
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /goly:
+    get:
+      summary: Get all Goly links
+      description: Retrieves a list of all Goly links. Requires authentication.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of Goly links.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Goly'
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new Goly link
+      description: Creates a new Goly link. Requires authentication.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Goly'
+      responses:
+        '200':
+          description: The created Goly link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goly'
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      summary: Update a Goly link
+      description: Updates an existing Goly link. Requires authentication.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Goly'
+      responses:
+        '200':
+          description: The updated Goly link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goly'
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /goly/{id}:
+    get:
+      summary: Get a Goly link by ID
+      description: Retrieves a specific Goly link by its ID. Requires authentication.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the Goly link.
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: The requested Goly link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goly'
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a Goly link by ID
+      description: Deletes a specific Goly link by its ID. Requires authentication.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the Goly link.
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: Goly link deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: goly deleted.
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User registered successfully.
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      summary: Log in a user
+      description: Logs in a user and returns a session token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: User logged in successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '401':
+          description: Unauthorized.
+        '500':
+          description: Internal Server Error.
+
+  /auth/logout:
+    post:
+      summary: Log out a user
+      description: Logs out a user by invalidating their session token.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User logged out successfully.
+        '500':
+          description: Internal Server Error.
+
+  /admin:
+    get:
+      summary: Admin endpoint
+      description: An endpoint accessible only by admin users. Requires authentication and admin role.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Welcome message for admin.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Welcome, Admin!
+        '401':
+          description: Unauthorized.
+        '403':
+          description: Forbidden.
+
+components:
+  schemas:
+    Goly:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint64
+          readOnly: true
+        redirect:
+          type: string
+        goly:
+          type: string
+        clicked:
+          type: integer
+          format: uint64
+        random:
+          type: boolean
+    User:
+      type: object
+      properties:
+        ID:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+        role:
+          type: string
+          readOnly: true
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
