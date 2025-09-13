@@ -1,10 +1,44 @@
 <script>
+	/**
+	 * @component
+	 * A reusable modal component for creating and updating Goly links.
+	 */
     import { closeModal } from "svelte-modals"
+
+	/**
+	 * The title of the modal.
+	 * @type {string}
+	 */
     export let title
+
+	/**
+	 * Controls the visibility of the modal.
+	 * @type {boolean}
+	 */
     export let isOpen
+
+	/**
+	 * The redirect URL for the Goly link.
+	 * @type {string}
+	 */
     export let redirect
+
+	/**
+	 * The "goly" part of the URL.
+	 * @type {string}
+	 */
     export let goly
+
+	/**
+	 * Whether the "goly" URL should be randomly generated.
+	 * @type {boolean}
+	 */
     export let random
+
+	/**
+	 * The function to call when the form is submitted.
+	 * @type {function}
+	 */
     export let send
 
     let data = {

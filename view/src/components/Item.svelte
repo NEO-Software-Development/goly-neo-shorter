@@ -1,10 +1,25 @@
 <script>
+	/**
+	 * @component
+	 * This component displays a single Goly link with its details.
+	 * It provides options to update or delete the link.
+	 */
     import Card from "./Card.svelte"
     import Modal from "./Modal.svelte"
     import { Modals, closeModal, openModal } from "svelte-modals"
 
+	/**
+	 * The Goly object to display.
+	 * @type {{id: number, goly: string, redirect: string, clicked: number, random: boolean}}
+	 */
     export let goly
+
     let showCard = true
+
+	/**
+	 * Updates the Goly link on the server.
+	 * @param {{redirect: string, goly: string, random: boolean}} data - The updated data for the Goly link.
+	 */
     async function update(data) {
         const json = {
             redirect: data.redirect,
@@ -22,6 +37,10 @@
         })
     }
 
+	/**
+	 * Opens the modal for updating the Goly link.
+	 * @param {{id: number, goly: string, redirect: string, clicked: number, random: boolean}} goly - The Goly object to update.
+	 */
     function handleOpen(goly) {
         openModal(Modal, {
             title: "Update Goly Link",
@@ -32,6 +51,9 @@
         })
     }
 
+	/**
+	 * Deletes the Goly link from the server.
+	 */
     async function deleteGoly() {
         if (confirm("Are you sure you wish to delete this Goly link (" + goly.goly + ")?")) {
             await fetch("http://localhost:3000/goly/" + goly.id, {

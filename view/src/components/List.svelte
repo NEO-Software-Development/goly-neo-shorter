@@ -1,7 +1,16 @@
 <script>
+	/**
+	 * @component
+	 * This component fetches and displays a list of Goly links.
+	 * It uses the Item component to render each link.
+	 */
     import Item from "./Item.svelte"
     import { onMount } from "svelte"
 
+	/**
+	 * An array of Goly objects.
+	 * @type {Array<object>}
+	 */
     let golies = []
 
     onMount(async () => {

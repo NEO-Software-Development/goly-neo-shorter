@@ -1,3 +1,11 @@
+<script>
+    /**
+     * @component
+     * A simple card component for displaying content.
+     * It provides a styled container for its children.
+     */
+</script>
+
 <div class="card">
     <slot></slot>
 </div>

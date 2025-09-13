@@ -1,7 +1,15 @@
 <script>
+	/**
+	 * @component
+	 * This component provides a button to open a modal for creating a new Goly link.
+	 */
     import { Modals, closeModal, openModal } from "svelte-modals"
     import Modal from "./Modal.svelte"
 
+	/**
+	 * Creates a new Goly link on the server.
+	 * @param {{redirect: string, goly: string, random: boolean}} data - The data for the new Goly link.
+	 */
     async function updateGoly(data) {
         const json = {
             redirect: data.redirect,
@@ -17,6 +25,9 @@
         })
     }
 
+	/**
+	 * Opens the modal for creating a new Goly link.
+	 */
     function handleOpen() {
         openModal(Modal, {
             title: "Create New Goly Link",
