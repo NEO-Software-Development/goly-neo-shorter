@@ -1,15 +1,15 @@
 <script>
     import Item from "./Item.svelte"
     import { onMount } from "svelte"
-
-    let golies = []
+    import { golies } from "../stores.js"
 
     onMount(async () => {
         const res = await fetch("http://localhost:3000/goly")
-        golies = await res.json()
+        const data = await res.json()
+        golies.set(data)
     })
 </script>
 
-{#each golies as goly}
+{#each $golies as goly (goly.id)}
     <Item goly={goly} />
 {/each}

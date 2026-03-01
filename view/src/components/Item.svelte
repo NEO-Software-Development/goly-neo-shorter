@@ -2,9 +2,10 @@
     import Card from "./Card.svelte"
     import Modal from "./Modal.svelte"
     import { Modals, closeModal, openModal } from "svelte-modals"
+    import { golies } from "../stores.js"
 
     export let goly
-    let showCard = true
+
     async function update(data) {
         const json = {
             redirect: data.redirect,
@@ -13,13 +14,14 @@
             id: goly.id
         }
 
-        await fetch("http://localhost:3000/goly", {
+        const res = await fetch("http://localhost:3000/goly", {
             method: "PATCH",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(json)
-        }).then(res => {
-            console.log(res)
         })
+        const updatedGoly = await res.json()
+        golies.update(items => items.map(item => item.id === goly.id ? updatedGoly : item))
+        closeModal()
     }
 
     function handleOpen(goly) {
@@ -36,23 +38,19 @@
         if (confirm("Are you sure you wish to delete this Goly link (" + goly.goly + ")?")) {
             await fetch("http://localhost:3000/goly/" + goly.id, {
                 method: "DELETE"
-            }).then(response => {
-                showCard = false
-                console.log(response)
             })
+            golies.update(items => items.filter(item => item.id !== goly.id))
         }
     }
 
 </script>
-{#if showCard }
 <Card>
     <p>Goly: http://localhost:3000/r/{goly.goly} </p>
     <p>Redirect: {goly.redirect}</p>
     <p>Clicked: {goly.clicked}</p>
-    <button class="update" on:click={ handleOpen(goly) }>Update</button>
+    <button class="update" on:click={ () => handleOpen(goly) }>Update</button>
     <button class="delete" on:click={deleteGoly}>Delete</button>
 </Card>
-{/if}
 <Modals>
     <div 
         slot="backdrop"
