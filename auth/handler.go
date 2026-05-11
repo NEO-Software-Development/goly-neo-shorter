@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -198,6 +199,14 @@ func Logout(c *fiber.Ctx) error {
 	})
 }
 
+// cookieSecure derives the Secure flag from PUBLIC_BASE_URL's scheme so a
+// single env var controls "where this app is served from". Unset (the
+// localhost default) means HTTP dev → Secure=false; explicit https://… in
+// production flips it on automatically. No second knob to keep in sync.
+func cookieSecure() bool {
+	return strings.HasPrefix(strings.ToLower(os.Getenv("PUBLIC_BASE_URL")), "https://")
+}
+
 // SetSessionCookie centralizes the session-cookie attributes. Secure/HttpOnly
 // and SameSite=Lax are applied uniformly so the login and logout paths can't
 // drift apart.
@@ -208,7 +217,7 @@ func SetSessionCookie(c *fiber.Ctx, token string, expires time.Time) {
 		Path:     "/",
 		Expires:  expires,
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   cookieSecure(),
 		SameSite: "Lax",
 	})
 }
@@ -220,7 +229,7 @@ func ClearSessionCookie(c *fiber.Ctx) {
 		Path:     "/",
 		Expires:  time.Now().Add(-time.Hour),
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   cookieSecure(),
 		SameSite: "Lax",
 	})
 }
@@ -270,9 +279,11 @@ func Verify2FA(c *fiber.Ctx) error {
 // so the values are useless without server access.
 func deviceHash(c *fiber.Ctx) string {
 	ua := c.Get("User-Agent")
-	pepper := os.Getenv("PASSWORD_PEPPER")
-	h := sha256.Sum256([]byte("goly:dev:" + pepper + "|" + ua))
-	return hex.EncodeToString(h[:16])
+	mac := hmac.New(sha256.New, []byte(os.Getenv("PASSWORD_PEPPER")))
+	mac.Write([]byte("goly:dev:"))
+	mac.Write([]byte(ua))
+	sum := mac.Sum(nil)
+	return hex.EncodeToString(sum[:16])
 }
 
 func hasSeenDevice(userID uint, device string) bool {
@@ -319,6 +330,9 @@ func StartEmailVerification(c *fiber.Ctx) error {
 	}
 	req.Email = strings.TrimSpace(req.Email)
 	if req.Email != "" {
+		if _, err := mail.ParseAddress(req.Email); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email must be a valid address"})
+		}
 		user.Email = req.Email
 		user.EmailVerifiedAt = nil
 		if err := UpdateUser(user); err != nil {

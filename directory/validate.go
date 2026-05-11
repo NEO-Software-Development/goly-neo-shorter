@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	slugRe = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])?$`)
+	slugRe = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$`)
 	e164Re = regexp.MustCompile(`^\+[1-9][0-9]{6,14}$`)
 	hexRe  = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 

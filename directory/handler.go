@@ -276,13 +276,16 @@ func PublishDirectoryHandler(c *fiber.Ctx) error {
 	return c.JSON(d)
 }
 
+// linkInput uses *int for Position so we can distinguish "client omitted
+// position" (nil) from "client set position to 0" (&0). With a plain int,
+// a PATCH that only updates Label would silently reorder the link to 0.
 type linkInput struct {
 	Kind       string `json:"kind"`
 	Label      string `json:"label"`
 	Value      string `json:"value"`
 	Visibility string `json:"visibility"`
 	RevealMode string `json:"reveal_mode"`
-	Position   int    `json:"position"`
+	Position   *int   `json:"position"`
 }
 
 func AddLinkHandler(c *fiber.Ctx) error {
@@ -311,7 +314,9 @@ func AddLinkHandler(c *fiber.Ctx) error {
 		Value:       in.Value,
 		Visibility:  in.Visibility,
 		RevealMode:  in.RevealMode,
-		Position:    in.Position,
+	}
+	if in.Position != nil {
+		l.Position = *in.Position
 	}
 	if err := ValidateContactLinkInput(l); err != nil {
 		return badRequest(c, err)
@@ -378,7 +383,9 @@ func UpdateLinkHandler(c *fiber.Ctx) error {
 	if in.RevealMode != "" {
 		l.RevealMode = in.RevealMode
 	}
-	l.Position = in.Position
+	if in.Position != nil {
+		l.Position = *in.Position
+	}
 	if err := ValidateContactLinkInput(l); err != nil {
 		return badRequest(c, err)
 	}
@@ -532,7 +539,8 @@ func PublicLinkValueHandler(c *fiber.Ctx) error {
 
 func PublicQRHandler(c *fiber.Ctx) error {
 	slug := strings.ToLower(c.Params("slug"))
-	if _, err := GetPublishedDirectoryBySlug(slug); err != nil {
+	d, err := GetPublishedDirectoryBySlug(slug)
+	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return notFound(c)
 		}
@@ -548,7 +556,7 @@ func PublicQRHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return serverError(c)
 	}
-	applyPrivacyHeaders(c, true)
+	applyPrivacyHeaders(c, d.IsIndexable)
 	c.Set("Content-Type", "image/png")
 	c.Set("Cache-Control", "public, max-age=3600")
 	return c.Send(png)
@@ -585,7 +593,7 @@ func ExportMeHandler(c *fiber.Ctx) error {
 	for i := range dirs {
 		full, err := GetDirectoryForOwner(dirs[i].ID, ownerID)
 		if err != nil {
-			continue
+			return serverError(c)
 		}
 		out = append(out, *full)
 	}
