@@ -97,7 +97,7 @@ Session-based with HTTP-only, `Secure`, `SameSite=Lax` cookies. Tokens are 32 ra
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/auth/register` | `{username, password, email?}`. Email is optional. Rate limited 10/min/IP. |
+| POST | `/auth/register` | `{username, password, email}`. Email is required and validated via `net/mail.ParseAddress`. Rate limited 10/min/IP. |
 | POST | `/auth/login` | `{username, password, otp?}`. Failures return a single `invalid_credentials` shape regardless of cause (unknown user vs wrong password vs missing OTP for a 2FA-enabled user is the only branch surfaced separately, via `totp_required: true`). |
 | POST | `/auth/logout` | |
 | POST | `/auth/2fa/enroll` | Generates a fresh TOTP secret + provisioning URL. |
@@ -133,7 +133,7 @@ Session-based with HTTP-only, `Secure`, `SameSite=Lax` cookies. Tokens are 32 ra
 ### Owner side
 
 - **Public payload strips owner identity.** `owner_id`, owner username, and timestamps are never returned on public endpoints.
-- **Email is optional at signup**, and only used if the owner adds it for recovery / verification.
+- **Email is required at signup** so the account has a recovery channel from day one; the verification flow flips `email_verified_at` once the owner confirms the token.
 - **Right-to-erasure** via `DELETE /api/v1/me` cascades hard-deletes across directories, links, audit entries, sessions, backup codes, verification tokens, and the user record itself, in one transaction.
 - **Data portability** via `GET /api/v1/me/export`.
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"goly-app/database"
 	"log"
+	"net/mail"
 	"os"
 	"strconv"
 	"strings"
@@ -51,14 +52,19 @@ func Register(c *fiber.Ctx) error {
 
 	req.Username = strings.TrimSpace(req.Username)
 	req.Email = strings.TrimSpace(req.Email)
-	if req.Username == "" || req.Password == "" {
+	if req.Username == "" || req.Password == "" || req.Email == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "username and password are required",
+			"error": "username, password, and email are required",
 		})
 	}
 	if len(req.Password) < 8 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "password must be at least 8 characters",
+		})
+	}
+	if _, err := mail.ParseAddress(req.Email); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "email must be a valid address",
 		})
 	}
 
