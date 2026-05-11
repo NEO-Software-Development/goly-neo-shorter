@@ -3,8 +3,10 @@ package server
 import (
 	"fmt"
 	"goly-app/auth"
+	"goly-app/directory"
 	"goly-app/goly/model"
 	"goly-app/goly/utils"
+	mw "goly-app/middleware"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -128,17 +130,22 @@ func deleteGoly(c *fiber.Ctx) error {
 
 func SetupAndListen() {
 
-	router := fiber.New()
+	router := fiber.New(fiber.Config{
+		BodyLimit: 64 * 1024,
+	})
+
+	router.Use(mw.SecurityHeaders)
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowOrigins:     "*",
+		AllowHeaders:     "Origin, Content-Type, Accept, X-CSRF-Token",
+		AllowCredentials: false,
 	}))
 
-	// Public routes
+	// Public redirect endpoint (legacy short-link surface).
 	router.Get("/r/:redirect", redirect)
 
-	// Goly routes
+	// Goly routes (existing short-link admin).
 	goly := router.Group("/goly", auth.AuthMiddleware)
 	goly.Get("/", getAllGolies)
 	goly.Get("/:id", getGoly)
@@ -146,8 +153,16 @@ func SetupAndListen() {
 	goly.Patch("/", updateGoly)
 	goly.Delete("/:id", deleteGoly)
 
-	// Auth routes
+	// Auth routes (register/login/logout + 2FA).
 	auth.SetupRoutes(router)
+
+	// Company directory API.
+	directory.SetupRoutes(router)
+
+	// Health check (no auth, no body).
+	router.Get("/health", func(c *fiber.Ctx) error {
+		return c.SendString("ok")
+	})
 
 	// Admin routes
 	admin := router.Group("/admin", auth.AuthMiddleware, auth.AdminOnly)
@@ -156,5 +171,5 @@ func SetupAndListen() {
 	})
 
 	router.Listen(":3000")
-	
+
 }
