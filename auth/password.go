@@ -1,15 +1,39 @@
 package auth
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"golang.org/x/crypto/argon2"
 )
+
+// passwordPepper returns the server-side secret mixed into every password
+// before Argon2id hashing. With a pepper, a database-only breach yields hashes
+// that are infeasible to crack without also stealing the pepper from the host.
+// Empty pepper is allowed in development; production deployments MUST set
+// PASSWORD_PEPPER (documented in the README).
+func passwordPepper() []byte { return []byte(os.Getenv("PASSWORD_PEPPER")) }
+
+// pepperedPassword returns HMAC-SHA256(pepper, password) when a pepper is
+// configured, otherwise the raw password. Using HMAC keeps the input to
+// Argon2 a fixed length and avoids edge cases where a long pepper interacts
+// poorly with the hashing parameters.
+func pepperedPassword(password string) []byte {
+	pepper := passwordPepper()
+	if len(pepper) == 0 {
+		return []byte(password)
+	}
+	m := hmac.New(sha256.New, pepper)
+	m.Write([]byte(password))
+	return m.Sum(nil)
+}
 
 var (
 	ErrInvalidHash         = errors.New("the encoded hash is not in the correct format")
@@ -38,7 +62,7 @@ func HashPassword(password string) (string, error) {
 		return "", err
 	}
 
-	hash := argon2.IDKey([]byte(password), salt, params.iterations, params.memory, params.parallelism, params.keyLength)
+	hash := argon2.IDKey(pepperedPassword(password), salt, params.iterations, params.memory, params.parallelism, params.keyLength)
 
 	b64Salt := base64.RawStdEncoding.EncodeToString(salt)
 	b64Hash := base64.RawStdEncoding.EncodeToString(hash)
@@ -54,7 +78,7 @@ func ComparePasswordAndHash(password, encodedHash string) (bool, error) {
 		return false, err
 	}
 
-	otherHash := argon2.IDKey([]byte(password), salt, p.iterations, p.memory, p.parallelism, p.keyLength)
+	otherHash := argon2.IDKey(pepperedPassword(password), salt, p.iterations, p.memory, p.parallelism, p.keyLength)
 
 	if subtle.ConstantTimeCompare(hash, otherHash) == 1 {
 		return true, nil
